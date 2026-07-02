@@ -29,44 +29,40 @@ This project solves that by deploying an **Agentic AI Fuzzer**. Utilizing the Re
 ├── generated-tests/       # Output directory for autonomous PyTest scripts
 ├── docker-compose.yml     # Orchestrates the isolated network
 └── .env                   # API keys and environment variables
+```
 
-⚙️ Quick Start
-1. Prerequisites
-Docker and Docker Compose installed
+## ⚙️ Quick Start
 
-A Google Gemini API Key
+### 1. Prerequisites
+* **Docker** and **Docker Compose** installed
+* A Google Gemini API Key
 
-2. Setup
+### 2. Setup
 Clone the repository and set up your environment variables:
 
-Bash
-git clone [https://github.com/yourusername/agentic-qa-fuzzer.git](https://github.com/yourusername/agentic-qa-fuzzer.git)
+```bash
+git clone https://github.com/yourusername/agentic-qa-fuzzer.git
 cd agentic-qa-fuzzer
 cp .env.example .env
-Add your GEMINI_API_KEY to the .env file.
+```
 
-3. Run the Fuzzer
+Add your `GEMINI_API_KEY` to the `.env` file.
+
+### 3. Run the Fuzzer
 Spin up both the Victim API and the Attacker Agent using Docker Compose:
 
-Bash
+```bash
 docker-compose up --build
-4. Watch the Hunt
+```
+
+### 4. Watch the Hunt
 Check your terminal logs. You will see the agent:
 
-Fetch the OpenAPI schema from the Victim API.
+1. Fetch the OpenAPI schema from the Victim API.
+2. Send initial payloads and analyze the HTTP status codes.
+3. Mutate payloads to bypass `422` Validation Errors.
+4. Trigger a `500` Internal Server Error.
+5. Save a `test_vulnerability.py` file to the `/generated-tests` folder.
 
-Send initial payloads and analyze the HTTP status codes.
-
-Mutate payloads to bypass 422 Validation Errors.
-
-Trigger a 500 Internal Server Error.
-
-Save a test_vulnerability.py file to the /generated-tests folder.
-
-⚠️ Disclaimer
-This tool is built for educational and internal QA testing purposes only. The agent is designed to be executed against the local victim-api container provided in this repository. Do not point this fuzzer at external production APIs or environments you do not own.
-
-
-***
-
-Let me know if you want to tweak any of the sections before you commit it!
+## ⚠️ Disclaimer
+This tool is built for educational and internal QA testing purposes only. The agent is designed to be executed against the local `victim-api` container provided in this repository. Do not point this fuzzer at external production APIs or environments you do not own.
