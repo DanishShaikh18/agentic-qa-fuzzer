@@ -64,5 +64,3 @@ Check your terminal logs. You will see the agent:
 4. Trigger a `500` Internal Server Error.
 5. Save a `test_vulnerability.py` file to the `/generated-tests` folder.
 
-## ⚠️ Disclaimer
-This tool is built for educational and internal QA testing purposes only. The agent is designed to be executed against the local `victim-api` container provided in this repository. Do not point this fuzzer at external production APIs or environments you do not own.
