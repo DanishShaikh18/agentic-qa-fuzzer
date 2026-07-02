@@ -1,25 +1,25 @@
 # ==========================================
-# Core AI Orchestration (Modern Architecture)
+# Core AI Orchestration (LangGraph ReAct Loop)
 # ==========================================
-langchain>=0.2.5
-langchain-core>=0.2.9
-langgraph>=0.1.8
+langgraph==1.2.7
+langchain-core==1.4.8
 
 # ==========================================
-# Google Gemini Native Integration
+# Google Gemini LLM Integration
 # ==========================================
-# This is the updated, official package for Gemini API tool-calling
-langchain-google-genai>=1.0.6
+langchain-google-genai==4.2.6
 
 # ==========================================
-# Model Context Protocol (MCP) & Tools
+# Model Context Protocol (MCP) — Tool Proxying
 # ==========================================
-mcp>=0.1.0
-fastmcp>=0.1.0
+# langchain-mcp-adapters bridges LangGraph ↔ MCP tool discovery.
+# agent.py imports: from langchain_mcp_adapters.client import MultiServerMCPClient
+langchain-mcp-adapters==0.3.0
+# fastmcp is the MCP server framework used by mcp_server.py
+fastmcp==3.4.2
 
 # ==========================================
-# Network, Testing, & Environment
+# Network, Environment & Testing
 # ==========================================
-httpx>=0.27.0
-pytest>=8.2.0
-python-dotenv>=1.0.1
+httpx==0.28.1
+python-dotenv==1.2.2

@@ -22,7 +22,7 @@ class AppConfig:
     def __init__(self) -> None:
         self.GEMINI_API_KEY: str = self._get_required_env("GEMINI_API_KEY")
         self.TARGET_API_URL: str = os.getenv("TARGET_API_URL", "http://localhost:8000")
-        self.MAX_RECURSION_LIMIT: int = int(os.getenv("MAX_RECURSION_LIMIT", "25"))
+        self.MAX_RECURSION_LIMIT: int = int(os.getenv("MAX_RECURSION_LIMIT", "15"))
 
     @staticmethod
     def _get_required_env(key: str) -> str:

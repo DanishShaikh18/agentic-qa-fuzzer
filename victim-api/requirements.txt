@@ -1,9 +1,6 @@
 # ==========================================
 # Victim API Target Dependencies
 # ==========================================
-fastapi>=0.111.0
-uvicorn[standard]>=0.30.0
-pydantic>=2.7.0
-
-# Optional: For parsing multi-part forms if you add complex vulnerable routes later
-python-multipart>=0.0.9
+fastapi==0.139.0
+uvicorn[standard]==0.49.0
+pydantic==2.13.4
