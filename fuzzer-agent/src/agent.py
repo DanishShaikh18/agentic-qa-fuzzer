@@ -36,6 +36,11 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
 
+try:
+    from .config import settings
+except ImportError:
+    from config import settings
+
 
 # ==========================================
 # 1. State Definition
@@ -234,12 +239,12 @@ def run_fuzzer(target_url: str = "http://localhost:8000") -> dict[str, Any]:
     }
 
     # Production Guardrail: Enforce recursion limit to prevent infinite loops
-    config = {"recursion_limit": 25}
+    config = {"recursion_limit": settings.MAX_RECURSION_LIMIT}
     return graph.invoke(initial_state, config=config)
 
 
 if __name__ == "__main__":
-    target_endpoint = os.getenv("VICTIM_API_URL", "http://localhost:8000")
+    target_endpoint = settings.TARGET_API_URL
     print(f"[*] Initializing Agentic QA Fuzzer against: {target_endpoint}")
     final_state = run_fuzzer(target_endpoint)
     print("[+] Fuzzing session terminated. Final summary:")
