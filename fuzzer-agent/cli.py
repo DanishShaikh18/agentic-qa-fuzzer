@@ -13,8 +13,14 @@ Usage:
 import argparse
 import asyncio
 import sys
+from pathlib import Path
 
 from langchain_core.messages import AIMessage
+
+# Ensure fuzzer-agent/src/ is importable when running cli.py directly
+_src_dir = str(Path(__file__).resolve().parent / "src")
+if _src_dir not in sys.path:
+    sys.path.insert(0, _src_dir)
 
 try:
     from .agent import run_fuzzer
@@ -22,6 +28,7 @@ try:
 except ImportError:
     from agent import run_fuzzer
     from config import settings
+
 
 
 def parse_args() -> argparse.Namespace:
