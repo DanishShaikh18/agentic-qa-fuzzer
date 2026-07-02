@@ -1,0 +1,37 @@
+# ==========================================
+# Environments & Virtual Ecosystems
+# ==========================================
+.venv/
+venv/
+env/
+ENV/
+*.env
+!.env.example
+
+# ==========================================
+# Python Runtime & Caching
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# ==========================================
+# Testing & QA Coverage Metrics
+# ==========================================
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# ==========================================
+# IDEs, Editors & System Clutter
+# ==========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

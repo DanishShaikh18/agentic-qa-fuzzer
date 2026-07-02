@@ -1,0 +1,44 @@
+# ==========================================
+# Version Control Systems
+# ==========================================
+.git
+.gitignore
+
+# ==========================================
+# Local Virtual Environments (CRITICAL)
+# ==========================================
+# We block this because the container builds its own environment.
+# Copying a local Mac/Windows venv into a Linux container will break it.
+.venv/
+venv/
+env/
+
+# ==========================================
+# Python Bytecode & Logs
+# ==========================================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+
+# ==========================================
+# Testing Artifacts & Temporary Workspaces
+# ==========================================
+.pytest_cache/
+.vscode/
+.idea/
+
+# ==========================================
+# Docker & Deployment Infrastructure files
+# ==========================================
+# These files coordinate infrastructure but aren't needed inside the application code context.
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# ==========================================
+# Dynamic Output Configuration Exceptions
+# ==========================================
+# We want to ignore the secrets but we allow the output folder framework to pass
+!.env.example
