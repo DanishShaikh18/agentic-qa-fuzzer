@@ -1,66 +1,121 @@
-# 🦠 Agentic QA Fuzzer 
+# Agentic QA Fuzzer
 
-> An autonomous, AI-driven API penetration testing and regression generation engine built with LangGraph and the Model Context Protocol (MCP).
+An autonomous API fuzzing agent that uses an LLM (Gemini 2.0 Flash) to discover unhandled server exceptions in REST APIs. Unlike traditional fuzzers that rely on random or grammar-based input generation, this system reads the target's OpenAPI schema, understands validation boundaries, and iteratively mutates payloads to bypass input validation (422/400) and escalate to unhandled crashes (500). When it finds one, it writes a standalone pytest regression test to disk automatically.
 
-## 🚀 Overview
+## Architecture
 
-Standard API fuzzing tools often fail against modern systems because they blindly blast endpoints with malformed binary strings that get instantly blocked by basic middleware validation. 
+The core design decision is **strict isolation between reasoning and execution**. The LLM never makes HTTP requests or touches the filesystem directly. All tool execution is proxied through a Model Context Protocol (MCP) server running as a subprocess, communicating over stdio (JSON-RPC 2.0).
 
-This project solves that by deploying an **Agentic AI Fuzzer**. Utilizing the ReAct framework and Google's Gemini 2.0 Flash, the agent reads a target API's OpenAPI schema, intelligently crafts edge-case payloads to bypass basic validation (422s/400s), and actively hunts for unhandled server crashes (500s). Once a vulnerability is found, the agent automatically generates a reproducible `pytest` script so developers can patch the bug and add the test to their CI/CD pipeline.
-
-## ✨ Key Features
-* **Stateful Orchestration:** Built on LangGraph to manage the Evaluator-Optimizer loop, tracking failed attempts and dynamically adjusting attack vectors.
-* **Model Context Protocol (MCP):** Completely isolates the AI reasoning engine from the execution environment. The LLM interfaces with target systems securely via `fastmcp` tool abstractions.
-* **Autonomous Test Generation:** Doesn't just find bugs—it writes the code to prove them. Automatically outputs structured Python test artifacts.
-* **Containerized Execution:** The Attacker Agent and the Victim API run in isolated Docker networks to simulate a real-world microservice environment.
-
-## 🛠️ Tech Stack
-* **AI Orchestration:** LangGraph, LangChain, Google GenAI
-* **Integration Standard:** Model Context Protocol (MCP) via `fastmcp`
-* **Target Environment:** FastAPI, Uvicorn, Pydantic
-* **Testing & HTTP:** PyTest, HTTPX
-* **Infrastructure:** Docker, Docker Compose
-
-## 📂 Project Structure
-```text
-.
-├── fuzzer-agent/          # The AI Attacker (LangGraph + MCP Client)
-├── victim-api/            # The Target App (FastAPI with intentional bugs)
-├── generated-tests/       # Output directory for autonomous PyTest scripts
-├── docker-compose.yml     # Orchestrates the isolated network
-└── .env                   # API keys and environment variables
+```
+                        LangGraph StateGraph
+                    ┌─────────────────────────┐
+                    │                         │
+                    │   ┌───────────────┐     │
+         START ────►│   │  Reasoning    │     │
+                    │   │  (Gemini LLM) │     │
+                    │   └──────┬────────┘     │
+                    │          │ tool_calls?   │
+                    │      ┌───┴───┐          │
+                    │      │  Yes  │  No ──────────► END
+                    │      └───┬───┘          │
+                    │   ┌──────▼────────┐     │
+                    │   │   ToolNode    │     │
+                    │   │  (MCP proxy)  │     │
+                    │   └──────┬────────┘     │
+                    │          │              │
+                    │          └──────────────┘
+                    └─────────────────────────┘
+                               │
+                    stdio (JSON-RPC 2.0)
+                               │
+                    ┌──────────▼──────────┐
+                    │   mcp_server.py     │
+                    │   (FastMCP 3.4.2)   │
+                    │                     │
+                    │  fetch_api_schema   │
+                    │  fire_http_request  │
+                    │  save_test_case     │
+                    └──────────┬──────────┘
+                               │
+                          httpx calls
+                               │
+                    ┌──────────▼──────────┐
+                    │    Victim API       │
+                    │  (FastAPI, :8000)   │
+                    └─────────────────────┘
 ```
 
-## ⚙️ Quick Start
+`langchain-mcp-adapters` handles the MCP client side — it spawns `mcp_server.py` as a subprocess, performs the tool discovery handshake, and converts MCP tool schemas into LangChain-compatible tool objects that LangGraph's `ToolNode` can dispatch to.
 
-### 1. Prerequisites
-* **Docker** and **Docker Compose** installed
-* A Google Gemini API Key
+## Tech Stack
 
-### 2. Setup
-Clone the repository and set up your environment variables:
+- **LangGraph** — StateGraph with ReAct-style reasoning/tool loop
+- **langchain-mcp-adapters** — MCP client bridging LangGraph to external tool servers
+- **FastMCP** — MCP server framework exposing tools over stdio
+- **Gemini 2.0 Flash** — LLM driving adversarial payload generation (via `langchain-google-genai`)
+- **FastAPI** — victim API target with intentional vulnerabilities
+- **httpx** — async HTTP client for tool-side requests
+- **pytest** — format for auto-generated regression tests
+
+## How It Works
+
+1. **Reconnaissance** — the agent calls `fetch_api_schema` to download the victim's OpenAPI spec and map all endpoints, parameter types, and validation constraints.
+2. **Adversarial probing** — it calls `fire_http_request` with structured payloads. If the target returns 422 (validation rejected) or 400 (bad request), the agent analyzes why and mutates the payload to bypass validation — e.g., sending `null` where a dict is expected, empty lists `[]` where non-empty is assumed, or `0` as a denominator.
+3. **Crash escalation** — mutation continues until the target returns an unhandled 500 Internal Server Error, indicating a real bug (uncaught exception in application code).
+4. **Regression capture** — once a 500 is confirmed, the agent calls `save_test_case` which writes a standalone pytest script to `generated-tests/` with the exact endpoint, method, and payload that triggered the crash.
+5. **Termination** — the agent outputs a vulnerability summary and the graph ends.
+
+## Setup and Run
+
+Requires Python 3.10+ and a [Gemini API key](https://ai.google.dev/).
 
 ```bash
-git clone https://github.com/yourusername/agentic-qa-fuzzer.git
-cd agentic-qa-fuzzer
-cp .env.example .env
+# Clone and create virtual environment
+git clone <repo-url> && cd agentic-qa-fuzzer
+python -m venv .venv
+
+# Install dependencies for both services
+.venv/Scripts/pip install -r victim-api/requirements.txt
+.venv/Scripts/pip install -r fuzzer-agent/requirements.txt
+
+# Set your Gemini API key
+echo GEMINI_API_KEY=your-key-here > .env
 ```
 
-Add your `GEMINI_API_KEY` to the `.env` file.
-
-### 3. Run the Fuzzer
-Spin up both the Victim API and the Attacker Agent using Docker Compose:
+Run in two terminals from the project root:
 
 ```bash
-docker-compose up --build
+# Terminal 1 — start the victim API
+.venv/Scripts/python -m uvicorn victim-api.app.main:app --host 127.0.0.1 --port 8000
+
+# Terminal 2 — run the fuzzer
+.venv/Scripts/python fuzzer-agent/cli.py --target-url http://localhost:8000
 ```
 
-### 4. Watch the Hunt
-Check your terminal logs. You will see the agent:
+On Linux/macOS, substitute `.venv/bin/` for `.venv/Scripts/`.
 
-1. Fetch the OpenAPI schema from the Victim API.
-2. Send initial payloads and analyze the HTTP status codes.
-3. Mutate payloads to bypass `422` Validation Errors.
-4. Trigger a `500` Internal Server Error.
-5. Save a `test_vulnerability.py` file to the `/generated-tests` folder.
+## Guardrails
 
+- **Recursion limit** — the LangGraph execution enforces a configurable `recursion_limit` (default 15, set via `MAX_RECURSION_LIMIT` in `.env`) to prevent runaway autonomous loops and bound token consumption.
+- **Exception isolation** — every tool in `mcp_server.py` wraps its logic in try/except and returns error strings instead of raising. A network timeout or target crash never kills the agent loop; the LLM receives the error as text and decides how to proceed.
+- **MCP process boundary** — the LLM reasoning layer has zero direct access to sockets, the filesystem, or `httpx`. All side effects go through the MCP server subprocess, which acts as a capability sandbox.
+
+## Project Structure
+
+```
+agentic-qa-fuzzer/
+├── .env                          # GEMINI_API_KEY (not committed)
+├── .gitignore
+├── victim-api/
+│   ├── requirements.txt          # fastapi, uvicorn, pydantic
+│   └── app/
+│       └── main.py               # FastAPI app with intentional vulnerabilities
+├── fuzzer-agent/
+│   ├── requirements.txt          # langgraph, langchain-mcp-adapters, fastmcp, etc.
+│   ├── cli.py                    # CLI entrypoint (argparse, banner, run loop)
+│   └── src/
+│       ├── agent.py              # LangGraph StateGraph, MCP client config, reasoning loop
+│       ├── config.py             # Environment/settings loader (dotenv + AppConfig)
+│       └── mcp_server.py         # FastMCP server: fetch_api_schema, fire_http_request, save_test_case
+└── generated-tests/              # Auto-generated pytest regression scripts (written by mcp_server.py)
+```
