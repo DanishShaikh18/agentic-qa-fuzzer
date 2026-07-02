@@ -1,0 +1,33 @@
+services:
+  victim-api:
+    build:
+      context: ./victim-api
+    ports:
+      - "8000:8000"
+    networks:
+      - fuzzer-net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/openapi.json').raise_for_status()"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  fuzzer-agent:
+    build:
+      context: ./fuzzer-agent
+    depends_on:
+      victim-api:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - TARGET_API_URL=http://victim-api:8000
+    volumes:
+      - ./generated-tests:/app/generated-tests
+    networks:
+      - fuzzer-net
+
+networks:
+  fuzzer-net:
+    driver: bridge

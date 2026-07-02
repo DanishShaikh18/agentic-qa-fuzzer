@@ -36,3 +36,14 @@ htmlcov/
 *.swo
 .DS_Store
 Thumbs.db
+
+# ==========================================
+# Fuzzer-Generated Test Output
+# ==========================================
+generated-tests/*.py
+!generated-tests/.gitkeep
+
+# ==========================================
+# Pyright / Type Checker Config (auto-generated)
+# ==========================================
+pyrightconfig.json
