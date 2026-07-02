@@ -1,0 +1,25 @@
+# ==========================================
+# Core AI Orchestration (Modern Architecture)
+# ==========================================
+langchain>=0.2.5
+langchain-core>=0.2.9
+langgraph>=0.1.8
+
+# ==========================================
+# Google Gemini Native Integration
+# ==========================================
+# This is the updated, official package for Gemini API tool-calling
+langchain-google-genai>=1.0.6
+
+# ==========================================
+# Model Context Protocol (MCP) & Tools
+# ==========================================
+mcp>=0.1.0
+fastmcp>=0.1.0
+
+# ==========================================
+# Network, Testing, & Environment
+# ==========================================
+httpx>=0.27.0
+pytest>=8.2.0
+python-dotenv>=1.0.1
